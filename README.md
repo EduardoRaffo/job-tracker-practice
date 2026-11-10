@@ -1,48 +1,50 @@
+🇪🇸 [Leer en español](README.es.md)
+
 # Job Tracker API
 
-API REST para llevar el seguimiento de candidaturas de empleo: guardas cada oferta, cambias su estado (guardada, aplicada, entrevista...) y consultas el historial. Proyecto de práctica para repasar FastAPI, SQLite y testing con pytest.
+REST API to track job applications: save each posting, update its status (saved, applied, interview...) and review your history. A practice project to consolidate FastAPI, SQLite and testing with pytest.
 
-## Tecnologías
+## Tech stack
 
 - Python 3.10+
 - [FastAPI](https://fastapi.tiangolo.com/) + Uvicorn
-- Pydantic v2 (validación de datos)
-- SQLite (módulo estándar `sqlite3`, consultas parametrizadas)
+- Pydantic v2 (data validation)
+- SQLite (standard `sqlite3` module, parameterized queries)
 - pytest + httpx (tests)
 
-## Instalación
+## Installation
 
 ```powershell
 git clone https://github.com/EduardoRaffo/job-tracker-practice.git
 cd job-tracker-practice
 python -m venv .venv
-.venv\Scripts\Activate.ps1      # en Linux/macOS: source .venv/bin/activate
+.venv\Scripts\Activate.ps1      # on Linux/macOS: source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Uso
+## Usage
 
 ```bash
 uvicorn main:app --reload
 ```
 
 - API: http://127.0.0.1:8000
-- Documentación interactiva (Swagger UI): http://127.0.0.1:8000/docs
+- Interactive docs (Swagger UI): http://127.0.0.1:8000/docs
 
-La base de datos `tracker.db` se crea sola en la carpeta de ejecución la primera vez que se hace una petición.
+The `tracker.db` database is created automatically in the working directory on the first request.
 
 ## Endpoints
 
-| Método | Ruta | Descripción | Respuestas |
-|--------|------|-------------|------------|
-| GET | `/health` | Comprueba que la API está viva | 200 |
-| POST | `/applications` | Crea una candidatura | 201 / 422 |
-| GET | `/applications` | Lista todas las candidaturas (lista vacía si no hay ninguna) | 200 |
-| GET | `/applications/{id}` | Devuelve una candidatura | 200 / 404 |
-| PATCH | `/applications/{id}` | Actualiza solo los campos enviados | 200 / 404 / 422 |
-| DELETE | `/applications/{id}` | Elimina una candidatura | 204 / 404 |
+| Method | Path | Description | Responses |
+|--------|------|-------------|-----------|
+| GET | `/health` | Checks that the API is alive | 200 |
+| POST | `/applications` | Creates an application | 201 / 422 |
+| GET | `/applications` | Lists all applications (empty list if none) | 200 |
+| GET | `/applications/{id}` | Returns one application | 200 / 404 |
+| PATCH | `/applications/{id}` | Updates only the fields sent | 200 / 404 / 422 |
+| DELETE | `/applications/{id}` | Deletes an application | 204 / 404 |
 
-### Ejemplo
+### Example
 
 ```bash
 curl -X POST http://127.0.0.1:8000/applications \
@@ -59,14 +61,14 @@ curl -X POST http://127.0.0.1:8000/applications \
 }
 ```
 
-## Modelo de datos
+## Data model
 
-| Campo | Tipo | Notas |
+| Field | Type | Notes |
 |-------|------|-------|
-| `id` | entero | Autogenerado, no se reutiliza al borrar |
-| `company` | texto | Obligatorio, de 1 a 120 caracteres |
-| `position` | texto | Obligatorio, de 1 a 120 caracteres |
-| `status` | enum | `saved` (por defecto), `applied`, `interview`, `offer`, `rejected` |
+| `id` | integer | Auto-generated, not reused after deletion |
+| `company` | text | Required, 1 to 120 characters |
+| `position` | text | Required, 1 to 120 characters |
+| `status` | enum | `saved` (default), `applied`, `interview`, `offer`, `rejected` |
 
 ## Tests
 
@@ -74,12 +76,16 @@ curl -X POST http://127.0.0.1:8000/applications \
 pytest -q
 ```
 
-Los tests sustituyen la dependencia `get_db` por una base de datos SQLite temporal (`dependency_overrides` + `tmp_path`), así que nunca tocan `tracker.db`. Cubren los seis endpoints, incluidos los casos de error (404, validación) y el PATCH con cuerpo vacío.
+The tests replace the `get_db` dependency with a temporary SQLite database (`dependency_overrides` + `tmp_path`), so they never touch `tracker.db`. They cover all six endpoints, including error cases (404, validation) and PATCH with an empty body.
 
-## Qué he aprendido
+## What I learned
 
-- Diseñar una API REST con FastAPI: rutas, códigos de estado y modelos Pydantic para validar entradas y salidas.
-- Persistencia con SQLite y consultas parametrizadas, con una conexión por petición mediante inyección de dependencias (`Depends`).
-- Actualizaciones parciales con PATCH (`model_dump(exclude_unset=True)`).
-- Leer tracebacks y depurar errores 422 y 500.
-- Escribir tests aislados con pytest, fixtures y `dependency_overrides`.
+- Designing a REST API with FastAPI: routes, status codes and Pydantic models to validate inputs and outputs.
+- Persistence with SQLite and parameterized queries, using one connection per request through dependency injection (`Depends`).
+- Partial updates with PATCH (`model_dump(exclude_unset=True)`).
+- Reading tracebacks and debugging 422 and 500 errors.
+- Writing isolated tests with pytest, fixtures and `dependency_overrides`.
+
+## License
+
+[MIT](LICENSE)
