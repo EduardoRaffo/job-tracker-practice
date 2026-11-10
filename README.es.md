@@ -4,6 +4,8 @@
 
 API REST para llevar el seguimiento de candidaturas de empleo: guardas cada oferta, cambias su estado (guardada, enviada, entrevista...) y consultas el historial. Proyecto de práctica para consolidar FastAPI, SQLite y testing con pytest.
 
+![Swagger UI con los seis endpoints](docs/swagger-overview.png)
+
 ## Tecnologías
 
 - Python 3.10+
