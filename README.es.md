@@ -2,6 +2,8 @@
 
 # Job Tracker API
 
+![CI](https://github.com/EduardoRaffo/job-tracker-practice/actions/workflows/ci.yml/badge.svg)
+
 API REST para llevar el seguimiento de candidaturas de empleo: guardas cada oferta, cambias su estado (guardada, enviada, entrevista...) y consultas el historial. Proyecto de práctica para consolidar FastAPI, SQLite y testing con pytest.
 
 ![Swagger UI con los seis endpoints](docs/swagger-overview.png)
@@ -23,6 +25,14 @@ python -m venv .venv
 .venv\Scripts\Activate.ps1      # en Linux/macOS: source .venv/bin/activate
 pip install -r requirements.txt
 ```
+## Ejecutar con Docker
+
+```bash
+docker build -t job-tracker .
+docker run -d -p 8000:8000 -v tracker-data:/data --name tracker job-tracker
+```
+
+Abrir http://localhost:8000/docs. Los datos se guardan en el volumen tracker-data, por lo que se conservan al reiniciar el contenedo
 
 ## Uso
 
