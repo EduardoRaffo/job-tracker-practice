@@ -2,7 +2,7 @@
 
 # Job Tracker API
 
-API REST para llevar el seguimiento de candidaturas de empleo: guardas cada oferta, cambias su estado (guardada, aplicada, entrevista...) y consultas el historial. Proyecto de práctica para repasar FastAPI, SQLite y testing con pytest.
+API REST para llevar el seguimiento de candidaturas de empleo: guardas cada oferta, cambias su estado (guardada, enviada, entrevista...) y consultas el historial. Proyecto de práctica para consolidar FastAPI, SQLite y testing con pytest.
 
 ## Tecnologías
 
@@ -31,7 +31,7 @@ uvicorn main:app --reload
 - API: http://127.0.0.1:8000
 - Documentación interactiva (Swagger UI): http://127.0.0.1:8000/docs
 
-La base de datos `tracker.db` se crea sola en la carpeta de ejecución la primera vez que se hace una petición.
+La base de datos `tracker.db` se crea automáticamente en la carpeta de ejecución la primera vez que se hace una petición.
 
 ## Endpoints
 
@@ -65,7 +65,7 @@ curl -X POST http://127.0.0.1:8000/applications \
 
 | Campo | Tipo | Notas |
 |-------|------|-------|
-| `id` | entero | Autogenerado, no se reutiliza al borrar |
+| `id` | entero | Autogenerado, no se reutiliza al eliminar |
 | `company` | texto | Obligatorio, de 1 a 120 caracteres |
 | `position` | texto | Obligatorio, de 1 a 120 caracteres |
 | `status` | enum | `saved` (por defecto), `applied`, `interview`, `offer`, `rejected` |
