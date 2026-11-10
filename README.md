@@ -25,6 +25,7 @@ python -m venv .venv
 .venv\Scripts\Activate.ps1      # on Linux/macOS: source .venv/bin/activate
 pip install -r requirements.txt
 ```
+
 ## Run with Docker
 
 ```bash
