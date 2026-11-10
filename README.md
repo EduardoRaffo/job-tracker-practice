@@ -4,6 +4,8 @@
 
 REST API to track job applications: save each posting, update its status (saved, applied, interview...) and review your history. A practice project to consolidate FastAPI, SQLite and testing with pytest.
 
+![Swagger UI showing the six endpoints](docs/swagger-overview.png)
+
 ## Tech stack
 
 - Python 3.10+
