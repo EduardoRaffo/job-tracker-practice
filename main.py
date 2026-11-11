@@ -1,7 +1,7 @@
 import sqlite3
 from fastapi import FastAPI, HTTPException, Depends, status
 from enum import Enum
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 
 app = FastAPI()
 DB_PATH = "tracker.db"
@@ -54,6 +54,16 @@ class ApplicationUpdate(BaseModel):
     company: str | None = Field(default=None, min_length=1, max_length=120)
     position: str | None = Field(default=None, min_length=1, max_length=120)
     status: Status = None
+
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=8, max_length=128)
+
+class UserPublic(BaseModel):
+    id: int
+    email: EmailStr
+
+
 
 class Application(ApplicationCreate):
     id: int
