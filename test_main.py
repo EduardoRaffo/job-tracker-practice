@@ -1,7 +1,8 @@
 import sqlite3
 import pytest
 from fastapi.testclient import TestClient
-from main import app, get_db 
+from main import app
+from db import get_db, init_db
 
 
 def test_health(client):
@@ -91,14 +92,7 @@ def client(tmp_path):
     def override_get_db():
         conn = sqlite3.connect(db_file, check_same_thread=False)
         conn.row_factory = sqlite3.Row
-        conn.execute("""
-                CREATE TABLE IF NOT EXISTS applications (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    company TEXT NOT NULL,
-                    position TEXT NOT NULL,
-                    status TEXT NOT NULL DEFAULT 'saved'
-                )
-                """)
+        init_db(conn)
         try:
             yield conn
         finally:

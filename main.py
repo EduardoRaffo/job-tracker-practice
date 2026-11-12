@@ -1,38 +1,13 @@
 import sqlite3
 from fastapi import FastAPI, HTTPException, Depends, status
 from enum import Enum
+from db import get_db
 from pydantic import BaseModel, EmailStr, Field
+from pwdlib import PasswordHash
 
 app = FastAPI()
-DB_PATH = "tracker.db"
+hasher = PasswordHash.recommended()
 
-def get_db():
-    conn =  sqlite3.connect(DB_PATH, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS applications (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            company TEXT NOT NULL,
-            position TEXT NOT NULL,
-            status TEXT NOT NULL DEFAULT 'saved'
-        )
-        """
-    )
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT NOT NULL UNIQUE,
-            password_hash TEXT NOT NULL,
-            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-        )
-        """
-    )
-    try:
-        yield conn
-    finally:
-        conn.close()
 @app.get("/health")
 def health():
     return {"status": "ok"}
@@ -76,6 +51,7 @@ def get_or_404(db, app_id):
                             detail="Candidatura no encontrada",   
     )
     return Application(**dict(check))
+
 @app.post("/applications", response_model=Application, status_code=status.HTTP_201_CREATED)
 def create_application(payload: ApplicationCreate, db: sqlite3.Connection = Depends(get_db)
 ):
@@ -85,6 +61,24 @@ def create_application(payload: ApplicationCreate, db: sqlite3.Connection = Depe
     )
     db.commit()
     return Application(id=cur.lastrowid, **payload.model_dump())
+
+@app.post("/auth/register", response_model=UserPublic,
+          status_code=status.HTTP_201_CREATED)
+def register(payload: UserCreate, db: sqlite3.Connection = Depends(get_db)):
+    email = payload.email.lower()
+    hashed = hasher.hash(payload.password)
+    try:
+        cur = db.execute(
+            "INSERT INTO users (email, password_hash) VALUES (?, ?)",
+            (email, hashed),
+        )
+        db.commit()
+    except sqlite3.IntegrityError:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="El email ya está registrado",
+        )
+    return UserPublic(id=cur.lastrowid, email=email)
 
 @app.get("/applications",response_model=list[Application])
 def list_applications(db: sqlite3.Connection = Depends(get_db)):
