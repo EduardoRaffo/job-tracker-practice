@@ -1,7 +1,8 @@
 import sqlite3
 import pytest
 from fastapi.testclient import TestClient
-from main import app, get_db 
+from main import app
+from db import get_db, init_db
 
 
 def test_health(client):
@@ -82,7 +83,37 @@ def test_update_application_empty_body(client):
     data_patch = response_patch.json()
     assert data_patch == data_post
     
-    
+def test_register_user(client):
+    email_test = "test@testmail.com"
+    password_test = "TestPassword"
+    response_post = client.post("/auth/register", json={"email": email_test, "password": password_test})
+    assert response_post.status_code == 201
+    data_post = response_post.json()
+    assert data_post["email"] == email_test
+    assert "password" not in data_post
+    assert "password_hash" not in data_post
+    assert password_test not in response_post.text
+
+def test_register_duplicate_email(client):
+    email_test = "test@testmail.com"
+    password_test = "TestPassword"
+    response_post = client.post("/auth/register", json={"email": email_test, "password": password_test})
+    assert response_post.status_code == 201
+    response_duplicate = client.post("/auth/register", json={"email": email_test, "password": password_test})
+    assert response_duplicate.status_code == 409
+    assert response_duplicate.json()["detail"] == "El email ya está registrado"   
+    response_upper = client.post("/auth/register", json={"email": email_test.upper(), "password": password_test})
+    assert response_upper.status_code == 409
+    assert response_upper.json()["detail"] == "El email ya está registrado"   
+
+def test_register_short_password(client):
+    email_test = "test@testmail.com"
+    password_short_test = "TPd"
+    response_post = client.post("/auth/register", json={"email": email_test, "password": password_short_test})
+    assert response_post.status_code == 422
+    errors = response_post.json()["detail"]
+    assert errors[0]["loc"][-1] == "password"
+
 
 @pytest.fixture
 def client(tmp_path):
@@ -91,14 +122,7 @@ def client(tmp_path):
     def override_get_db():
         conn = sqlite3.connect(db_file, check_same_thread=False)
         conn.row_factory = sqlite3.Row
-        conn.execute("""
-                CREATE TABLE IF NOT EXISTS applications (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    company TEXT NOT NULL,
-                    position TEXT NOT NULL,
-                    status TEXT NOT NULL DEFAULT 'saved'
-                )
-                """)
+        init_db(conn)
         try:
             yield conn
         finally:
