@@ -1,9 +1,14 @@
 import sqlite3
-from fastapi import FastAPI, HTTPException, Depends, status
 from enum import Enum
-from db import get_db
+
+from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, EmailStr, Field
 from pwdlib import PasswordHash
+
+from db import get_db
+from security import create_access_token
+
 
 app = FastAPI()
 hasher = PasswordHash.recommended()
@@ -38,6 +43,9 @@ class UserPublic(BaseModel):
     id: int
     email: EmailStr
 
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
 
 
 class Application(ApplicationCreate):
