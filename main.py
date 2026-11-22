@@ -88,6 +88,25 @@ def register(payload: UserCreate, db: sqlite3.Connection = Depends(get_db)):
         )
     return UserPublic(id=cur.lastrowid, email=email)
 
+@app.post("/auth/login", response_model=Token)
+def login(
+    form: OAuth2PasswordRequestForm = Depends(),
+    db: sqlite3.Connection = Depends(get_db),
+    ):
+            # Buscar al usuario por email
+            user = db.execute(
+                "SELECT id, password_hash FROM users WHERE email = ?", (form.username.lower(),),).fetchone()
+            
+            # Comprobar usuario y contraseña
+            if user is None or not hasher.verify(form.password, user["password_hash"]):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Credenciales incorrectas",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            return Token(access_token=create_access_token(user["id"]))
+
+
 @app.get("/applications",response_model=list[Application])
 def list_applications(db: sqlite3.Connection = Depends(get_db)):
     rows = db.execute("SELECT * FROM applications ORDER BY id")
