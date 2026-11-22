@@ -2,16 +2,17 @@ import sqlite3
 from enum import Enum
 
 from fastapi import FastAPI, HTTPException, Depends, status
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from pydantic import BaseModel, EmailStr, Field
 from pwdlib import PasswordHash
 
 from db import get_db
-from security import create_access_token
+from security import create_access_token, decode_access_token
 
 
 app = FastAPI()
 hasher = PasswordHash.recommended()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 @app.get("/health")
 def health():
@@ -106,6 +107,27 @@ def login(
                 )
             return Token(access_token=create_access_token(user["id"]))
 
+def get_current_user(
+        token: str = Depends(oauth2_scheme),
+        db: sqlite3.Connection = Depends(get_db),
+) -> UserPublic:
+    user_id = decode_access_token(token)
+    user = None
+    if user_id is not None:
+        user = db.execute(
+            "SELECT id, email FROM users WHERE id = ?", (user_id,)
+        ).fetchone()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token inválido o caducado",
+                    headers={"WWW-Authenticate": "Bearer"},
+        )
+    return UserPublic(id=user["id"], email=user["email"])
+
+@app.get("/auth/me", response_model=UserPublic)
+def read_me(current_user: UserPublic = Depends(get_current_user)):
+    return current_user
 
 @app.get("/applications",response_model=list[Application])
 def list_applications(db: sqlite3.Connection = Depends(get_db)):
