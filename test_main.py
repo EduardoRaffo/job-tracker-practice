@@ -114,6 +114,36 @@ def test_register_short_password(client):
     errors = response_post.json()["detail"]
     assert errors[0]["loc"][-1] == "password"
 
+def test_login_success(client):
+    email_test = "test@testmail.com"
+    password_test = "StrongPasswrd"
+    response_post = client.post("/auth/register", json={"email": email_test, "password": password_test})
+    assert response_post.status_code == 201
+    response_login_post = client.post("/auth/login", data={"username": email_test, "password": password_test})
+    assert response_login_post.status_code == 200
+    data_post = response_login_post.json()
+    assert data_post["token_type"] == "bearer"
+    assert "access_token" in data_post
+
+def test_login_wrong_password(client):
+    email_test = "test@testmail.com"
+    password_test = "StrongPassword"
+    wrong_password = "FakePassword"
+    response_post = client.post("/auth/register", json={"email": email_test, "password": password_test})
+    assert response_post.status_code == 201
+    response_login_post = client.post("/auth/login", data={"username": email_test, "password": wrong_password})
+    assert response_login_post.status_code == 401
+    data_post = response_login_post.json()
+    assert data_post["detail"] == "Credenciales incorrectas"
+
+def test_login_unknown_email(client):
+    email_test = "test@testmail.com"
+    password_test = "StrongPassword"
+    response_login_post = client.post("/auth/login", data={"username": email_test, "password": password_test})
+    assert response_login_post.status_code == 401
+    data_post = response_login_post.json()
+    assert data_post["detail"] == "Credenciales incorrectas"
+
 
 @pytest.fixture
 def client(tmp_path):
