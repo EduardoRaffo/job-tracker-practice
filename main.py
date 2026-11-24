@@ -58,8 +58,14 @@ class Application(ApplicationCreate):
     id: int
 
 
-def get_or_404(db, app_id):
-    check = db.execute("Select * From applications Where id = ?", (app_id,)).fetchone()
+def get_or_404(db, app_id, user_id):
+    check = db.execute(
+        "SELECT * FROM applications WHERE id = ? AND user_id = ?",
+        (
+            app_id,
+            user_id,
+        ),
+    ).fetchone()
     if check is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -96,8 +102,13 @@ def create_application(
     current_user: UserPublic = Depends(get_current_user),
 ):
     cur = db.execute(
-        "INSERT INTO applications (company, position, status) VALUES (?, ?, ?)",
-        (payload.company, payload.position, payload.status.value),
+        "INSERT INTO applications (company, position, status, user_id) VALUES (?, ?, ?, ?)",
+        (
+            payload.company,
+            payload.position,
+            payload.status.value,
+            current_user.id,
+        ),
     )
     db.commit()
     return Application(id=cur.lastrowid, **payload.model_dump())
@@ -112,7 +123,10 @@ def register(payload: UserCreate, db: sqlite3.Connection = Depends(get_db)):
     try:
         cur = db.execute(
             "INSERT INTO users (email, password_hash) VALUES (?, ?)",
-            (email, hashed),
+            (
+                email,
+                hashed,
+            ),
         )
         db.commit()
     except sqlite3.IntegrityError:
@@ -154,7 +168,9 @@ def list_applications(
     db: sqlite3.Connection = Depends(get_db),
     current_user: UserPublic = Depends(get_current_user),
 ):
-    rows = db.execute("SELECT * FROM applications ORDER BY id")
+    rows = db.execute(
+        "SELECT * FROM applications WHERE user_id = ? ORDER BY id", (current_user.id,)
+    )
     return [Application(**dict(r)) for r in rows]
 
 
@@ -164,7 +180,7 @@ def get_application(
     db: sqlite3.Connection = Depends(get_db),
     current_user: UserPublic = Depends(get_current_user),
 ):
-    return get_or_404(db, app_id)
+    return get_or_404(db, app_id, current_user.id)
 
 
 @app.patch("/applications/{app_id}", response_model=Application)
@@ -174,7 +190,7 @@ def update_application(
     db: sqlite3.Connection = Depends(get_db),
     current_user: UserPublic = Depends(get_current_user),
 ):
-    get_or_404(db, app_id)
+    get_or_404(db, app_id, current_user.id)
     changes = payload.model_dump(exclude_unset=True, exclude_none=True, mode="json")
     if changes:
         columns = ",".join(f"{col} = ?" for col in changes)
@@ -184,7 +200,7 @@ def update_application(
         )
         db.commit()
 
-    return get_or_404(db, app_id)
+    return get_or_404(db, app_id, current_user.id)
 
 
 @app.delete("/applications/{app_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -193,6 +209,6 @@ def del_application(
     db: sqlite3.Connection = Depends(get_db),
     current_user: UserPublic = Depends(get_current_user),
 ):
-    get_or_404(db, app_id)
+    get_or_404(db, app_id, current_user.id)
     db.execute("DELETE FROM applications WHERE id = ?", (app_id,))
     db.commit()

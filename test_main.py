@@ -230,3 +230,80 @@ def auth_client(client):
     token = response.json()["access_token"]
     client.headers["Authorization"] = f"Bearer {token}"
     return client
+
+
+@pytest.fixture
+def other_client(client):
+    other = TestClient(app)
+    credentials = {"email": "other@test.com", "password": "OtherPass123"}
+    other.post("/auth/register", json=credentials)
+    response = other.post(
+        "/auth/login",
+        data={"username": credentials["email"], "password": credentials["password"]},
+    )
+    token = response.json()["access_token"]
+    other.headers["Authorization"] = f"Bearer {token}"
+    return other
+
+
+def test_list_only_own_application(auth_client, other_client):
+    auth_client.post(
+        "/applications",
+        json={
+            "company": "Acme",
+            "position": "Junior Python",
+        },
+    )
+    response = other_client.get("/applications")
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+def test_cannot_get_other_user_application(auth_client, other_client):
+    response_post = auth_client.post(
+        "/applications",
+        json={
+            "company": "Acme",
+            "position": "Junior Python",
+        },
+    )
+    assert response_post.status_code == 201
+    app_id = response_post.json()["id"]
+    response_get = other_client.get(f"/applications/{app_id}")
+    assert response_get.status_code == 404
+    assert response_get.json()["detail"] == "Candidatura no encontrada"
+
+
+def test_cannot_update_other_user_application(auth_client, other_client):
+    response_post = auth_client.post(
+        "/applications",
+        json={
+            "company": "Acme",
+            "position": "Junior Python",
+        },
+    )
+    assert response_post.status_code == 201
+    app_id = response_post.json()["id"]
+    response_update = other_client.patch(
+        f"/applications/{app_id}", json={"status": "offer"}
+    )
+    assert response_update.status_code == 404
+    response_get = auth_client.get(f"/applications/{app_id}")
+    assert response_get.status_code == 200
+    assert response_get.json()["status"] == "saved"
+
+
+def test_cannot_delete_other_user_application(auth_client, other_client):
+    response_post = auth_client.post(
+        "/applications",
+        json={
+            "company": "Acme",
+            "position": "Junior Python",
+        },
+    )
+    assert response_post.status_code == 201
+    app_id = response_post.json()["id"]
+    response_delete = other_client.delete(f"/applications/{app_id}")
+    assert response_delete.status_code == 404
+    response_get = auth_client.get(f"/applications/{app_id}")
+    assert response_get.status_code == 200
